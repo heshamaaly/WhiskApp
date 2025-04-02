@@ -1,0 +1,12 @@
+# Xcode
+*.xcworkspace
+*.xcuserstate
+*.xccheckout
+Secrets.plist
+DerivedData/
+build/
+# CocoaPods (if using)
+Pods/
+# Firebase (if you have sensitive info, consider if it should be public)
+GoogleService-Info.plist//
+
