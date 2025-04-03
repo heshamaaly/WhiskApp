@@ -8,13 +8,14 @@
 import Foundation
 import FirebaseFirestore
 
-struct Recipe: Codable, Identifiable {
-    @DocumentID var id: String?      // Firestore will store this doc ID
-    var recipeId: String?           // Optional custom ID if needed
+struct Recipe: Identifiable, Codable {
+    @DocumentID var id: String?
+    var recipeId: String?
     var title: String
     var text: String
-    var ingredients: String
+    var ingredients: [String]
+    var instructions: [String]
     var mealType: String
-    var timestamp: Date
+    @ServerTimestamp var timestamp: Timestamp?
     var isFavorite: Bool
 }

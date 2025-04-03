@@ -12,6 +12,7 @@ import Firebase
 struct WhiskApp: App {
     init () {
         FirebaseApp.configure()
+        FirebaseConfiguration.shared.setLoggerLevel(.debug)
     }
     
     

@@ -75,6 +75,9 @@ struct RecipesView: View {
                         }
                     }
                     .listStyle(InsetGroupedListStyle())
+                    .refreshable {
+                        fetchRecipes()
+                    }
                 }
             }
             .navigationTitle("My Recipes")
@@ -86,7 +89,9 @@ struct RecipesView: View {
 
     // MARK: - Time Grouping Logic
     // MARK: - Time Grouping Logic
-    private func timeGroup(for date: Date) -> String {
+    private func timeGroup(for timestamp: Timestamp?) -> String {
+        // Convert the Timestamp to a Date; if nil, use the current date.
+        let date = timestamp?.dateValue() ?? Date()
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: Date())
         let startOfDate = calendar.startOfDay(for: date)

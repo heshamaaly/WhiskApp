@@ -42,6 +42,7 @@ struct ExpandableInputView: View {
             // Text Box styling
             .padding(.vertical, 8)
             .background(Color.white.opacity(0.75)) // White background at 75% opacity (i.e. 25% transparent)
+            //.background(.ultraThinMaterial)  // Using a built-in blur for that glassmorphism feel
             .cornerRadius(25)
             .overlay(
                 RoundedRectangle(cornerRadius: 25)
@@ -50,5 +51,21 @@ struct ExpandableInputView: View {
             .shadow(color: Color(red: 1.0, green: 192/255, blue: 0).opacity(0.7), radius: 38, x: 0, y: 0)
             .padding(.horizontal)
         }
+    }
+}
+
+//Preview
+
+struct ExpandableInputView_Previews: PreviewProvider {
+    static var previews: some View {
+        ExpandableInputView(
+            text: .constant("Sample text"),
+            onSubmit: {
+                // Add whatever test action you like, e.g.:
+                print("Preview Submit Tapped!")
+            }
+        )
+        .padding()
+        .previewLayout(.sizeThatFits)
     }
 }

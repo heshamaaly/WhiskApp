@@ -10,11 +10,6 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: Recipe
     
-    // Parse the recipe text into separate sections
-    private var parsed: (description: String, ingredients: [String], instructions: [String]) {
-        parseRecipeText(recipe.text)
-    }
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -28,7 +23,7 @@ struct RecipeDetailView: View {
                     .background(Color.white)
                 
                 // 2) Description Section
-                Text(parsed.description)
+                Text(recipe.text)
                     .font(.body)
                     .foregroundColor(Color(red: 127/255, green: 127/255, blue: 127/255))
                     .padding(.horizontal)
@@ -43,7 +38,7 @@ struct RecipeDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        ForEach(parsed.ingredients, id: \.self) { ingredient in
+                        ForEach(recipe.ingredients, id: \.self) { ingredient in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                 Text(ingredient)
@@ -64,7 +59,7 @@ struct RecipeDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        ForEach(parsed.instructions, id: \.self) { instruction in
+                        ForEach(recipe.instructions, id: \.self) { instruction in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                 Text(instruction)

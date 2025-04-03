@@ -55,6 +55,9 @@ struct FavoritesView: View {
                         }
                     }
                     .listStyle(InsetGroupedListStyle())
+                    .refreshable {
+                        fetchFavoriteRecipes()
+                    }
                 }
             }
             .navigationTitle("Favorites")

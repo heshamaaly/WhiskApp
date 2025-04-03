@@ -17,13 +17,17 @@ struct HomeView: View {
     @State private var showAccountSheet = false
     @Namespace private var animation
     @State private var isRecipeGenerated = false
-
-    // Structured recipe components
+    
+    // Structured recipe components for single recipe fallback (if needed)
     @State private var recipeTitle: String = ""
     @State private var recipeDescription: String = ""
     @State private var recipeIngredients: [String] = []
     @State private var recipeInstructions: [String] = []
-
+    
+    // Multiple recipes support
+    @State private var multiRecipes: [Recipe] = []
+    @State private var selectedRecipeIndex: Int = 0
+    
     private var openAIAPIKey: String {
         guard let filePath = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
               let plist = NSDictionary(contentsOfFile: filePath),
@@ -32,14 +36,14 @@ struct HomeView: View {
         }
         return key
     }
-
+    
     var body: some View {
         NavigationView {
             VStack {
                 if !isRecipeGenerated {
                     // INITIAL STATE: Show large logo and centered text field.
                     VStack(spacing: 20) {
-                        // Large logo (from your LogoHeaderView)
+                        // Large logo from LogoHeaderView
                         LogoHeaderView()
                             .matchedGeometryEffect(id: "logo", in: animation)
                         
@@ -49,7 +53,6 @@ struct HomeView: View {
                         }
                         .matchedGeometryEffect(id: "textBox", in: animation)
                         
-                        // Optionally, show a progress indicator if a generation is in progress.
                         if isLoading {
                             ProgressView("Whipping Up your Recipe...")
                                 .padding()
@@ -62,55 +65,55 @@ struct HomeView: View {
                         
                         Spacer()
                     }
+                    //Toolbar for empty state
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button(action: { showAccountSheet = true }) {
+                                Image(systemName: "person.fill") //Made this a square for testing!!
+                                    //.symbolEffect(.appear)
+                                    .foregroundStyle(Color.black)
+                            }
+                        }
+                    }
+                    .sheet(isPresented: $showAccountSheet) {
+                        AccountView()
+                    }
+                    
                 } else {
-                    // FINAL STATE: Show FinalStateView with the generated recipe.
                     FinalStateView(
                         userInput: $userInput,
-                        recipeTitle: recipeTitle,
-                        recipeDescription: recipeDescription,
-                        recipeIngredients: recipeIngredients,
-                        recipeInstructions: recipeInstructions,
+                        recipes: multiRecipes,
+                        selectedRecipeIndex: $selectedRecipeIndex,
                         animation: animation,
                         onRegenerate: { generateRecipe() },
                         isLoading: isLoading
                     )
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showAccountSheet = true }) {
-                        Image(systemName: "person.crop.circle")
-                    }
-                }
-            }
-            .sheet(isPresented: $showAccountSheet) {
-                AccountView()
-            }
+            
         }
         .animation(.easeInOut(duration: 0.5), value: isRecipeGenerated)
     }
     
-    private func generateRecipe() {
+    func generateRecipe() {
         // Dismiss the keyboard.
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            
-            // Ensure userInput is not empty.
-            guard !userInput.isEmpty else {
-                generatedRecipe = "Please describe your meal."
-                return
-            }
-            
-            // Reset the previous recipe data to clear the UI.
-            recipeTitle = ""
-            recipeDescription = ""
-            recipeIngredients = []
-            recipeInstructions = []
-            generatedRecipe = ""
-            
-            // Show loading indicator.
-            isLoading = true
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
-        // Set up your OpenAI API key and request
+        // Ensure userInput is not empty.
+        guard !userInput.isEmpty else {
+            generatedRecipe = "Please describe your meal."
+            return
+        }
+        
+        // Reset the previous recipe data.
+        recipeTitle = ""
+        recipeDescription = ""
+        recipeIngredients = []
+        recipeInstructions = []
+        generatedRecipe = ""
+        
+        isLoading = true
+        
         let apiKey = openAIAPIKey
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
@@ -118,24 +121,48 @@ struct HomeView: View {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         
-        // Prompt instructing the model to return valid JSON with four keys
         let prompt = """
-        Generate a recipe based on the following description: "\(userInput)".
-        Return your answer as valid JSON with exactly these keys:
-          "title": a concise recipe name (include an emoji at the end to represent the recipe),
-          "description": a short description of the dish,
-          "ingredients": an array of strings (each string is an ingredient),
-          "instructions": an array of strings (each string is a cooking step).
+        Generate a well-structured, easy-to-follow recipe that feels approachable and modern based on the following description: "\(userInput)".
+
+        The recipe should:
+        • Appeal to someone who wants yummy, healthy meals without being overly complex.
+        • Use clear, simple instructions with minimal fluff.
+        
+        Format the recipe so that it is easy to read and enjoyable to cook from. Please follow these guidelines for each section:
+                • Title: A clear, enticing title with an appropriate emoji
+                • Description: A quick one-liner describing the dish (flavor, ease, nutrition, or vibe
+                • Total Time: Specify the total time in minutes to prepare and cook (e.g., "30 minutes").
+                • Servings: Indicate the number of people it serves (e.g., "2", "4").
+                • Ingredients: Break them down logically and use everyday measurements (cups, tbsp, etc). Keep it concise but clear—enough detail to cook confidently. If it makes sense to group ingredients (for example, under headings like "Sauce", "Protein", "Bowl components"), then return ingredients as a JSON object where the keys are the group names and the values are arrays of ingredient strings. If grouping isn’t needed, simply return an array of ingredient strings.
+                • Instructions: Make them step by step and have 3–5 main steps, each with its own clear heading or keyword. Use verbs to lead: Cook, Mix, Add, Drizzle. Tips and alternatives embedded casually.  Similarly, if the instructions naturally break into sections (with clear headings or keywords), return them as a JSON object with keys as section names and values as arrays of step strings; otherwise, return a simple array of steps.
+                • Total Time: Total time it takes to prepare and cook in minutes, e.g., '30 minutes'
+                • Tips: Optionally, include tips or shortcuts. If there are multiple categories of tips, return them as a JSON object with keys as category names and values as arrays of tip strings; otherwise, return an array of tip strings. Callouts like: “Want it spicy?”, “Swap rice for cauliflower rice to keep it low-carb.”, “Add seaweed salad for a sushi bowl vibe.”
+
+        Return the recipe in the following JSON structure:
+
+        {
+          "title": "[Recipe Title with emoji]",
+          "description": "[Description]",
+          "totalTime": "[Total time, e.g., '30 minutes']",
+          "servings": "[Number of servings]",
+          "ingredients": (either an array of strings or an object mapping group names to arrays of strings),
+          "instructions": (either an array of strings or an object mapping section names to arrays of strings),
+          "tips": (either an array of strings or an object mapping categories to arrays of strings)
+        }
+
+        If the query is specific (e.g., "steak salad"), return a single recipe JSON object with the above keys.
+        If the query is open-ended (e.g., "give me ideas for a high protein dinner"), return a JSON object with a key "recipes" whose value is an array of such recipe objects.
+
         Do not include any extra text, markdown formatting, or code fences.
         """
         
         let body: [String: Any] = [
-            "model": "gpt-4o", // Change this if you have access to a different model.
+            "model": "gpt-4o",
             "messages": [
                 ["role": "system", "content": "You are a helpful recipe generator named Whisk."],
                 ["role": "user", "content": prompt]
             ],
-            "max_tokens": 800
+            "max_tokens": 1600
         ]
         
         do {
@@ -193,69 +220,118 @@ struct HomeView: View {
                         cleanedContent = content
                     }
                     
-                    if let responseData = cleanedContent.data(using: .utf8),
-                       let result = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
-                       let title = result["title"] as? String,
-                       let description = result["description"] as? String,
-                       let ingredients = result["ingredients"] as? [String],
-                       let instructions = result["instructions"] as? [String] {
-                        
-                        DispatchQueue.main.async {
-                            self.recipeTitle = title
-                            self.recipeDescription = description
-                            self.recipeIngredients = ingredients
-                            self.recipeInstructions = instructions
-                            self.isRecipeGenerated = true //Triggers the transition to the final layout
-                            
-                            let combinedText = """
-                            Description:
-                            \(description)
-                            
-                            Ingredients:
-                            \(ingredients.joined(separator: "\n"))
-                            
-                            Cooking Instructions:
-                            \(instructions.joined(separator: "\n"))
-                            """
-                            
-                            self.saveRecipeToFirestore(recipeText: combinedText, title: title)
+                    if let responseData = cleanedContent.data(using: .utf8) {
+                        do {
+                            // Try to parse multiple recipes first.
+                            if let multiRecipeResult = try JSONSerialization.jsonObject(with: responseData) as? [String: Any],
+                               let recipesArray = multiRecipeResult["recipes"] as? [[String: Any]], !recipesArray.isEmpty {
+                                
+                                var parsedRecipes: [Recipe] = []
+                                for recipeDict in recipesArray {
+                                    if let title = recipeDict["title"] as? String,
+                                       let description = recipeDict["description"] as? String,
+                                       let ingredientsArray = recipeDict["ingredients"] as? [String],
+                                       let instructionsArray = recipeDict["instructions"] as? [String] {
+                                        let recipe = Recipe(
+                                            recipeId: nil,
+                                            title: title,
+                                            text: description,
+                                            ingredients: ingredientsArray,  // Now an array of Strings
+                                            instructions: instructionsArray, // Pass instructions array
+                                            mealType: "",
+                                            timestamp: nil, // Use real timestamp if available
+                                            isFavorite: false
+                                        )
+                                        parsedRecipes.append(recipe)
+                                    }
+                                }
+                                
+                                DispatchQueue.main.async {
+                                    self.multiRecipes = parsedRecipes
+                                    self.selectedRecipeIndex = 0
+                                    if let firstRecipe = parsedRecipes.first {
+                                        self.recipeTitle = firstRecipe.title
+                                        self.recipeDescription = firstRecipe.text
+                                        self.recipeIngredients = firstRecipe.ingredients
+                                        self.recipeInstructions = firstRecipe.instructions
+                                    }
+                                    self.isRecipeGenerated = true
+                                    // Save each recipe independently to Firestore.
+                                    for recipe in parsedRecipes {
+                                        self.saveRecipeToFirestore(recipe: recipe)
+                                    }
+                                }
+                            } else if let singleRecipeResult = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] {
+                                // Fallback: single recipe parsing.
+                                if let title = singleRecipeResult["title"] as? String,
+                                   let description = singleRecipeResult["description"] as? String,
+                                   let ingredientsArray = singleRecipeResult["ingredients"] as? [String],
+                                   let instructionsArray = singleRecipeResult["instructions"] as? [String] {
+                                    let singleRecipe = Recipe(
+                                        recipeId: nil,
+                                        title: title,
+                                        text: description,
+                                        ingredients: ingredientsArray,
+                                        instructions: instructionsArray,
+                                        mealType: "",
+                                        timestamp: nil,
+                                        isFavorite: false
+                                        
+                                    )
+                                    DispatchQueue.main.async {
+                                        self.recipeTitle = title
+                                        self.recipeDescription = description
+                                        self.recipeIngredients = ingredientsArray
+                                        self.recipeInstructions = instructionsArray
+                                        self.multiRecipes = [singleRecipe]
+                                        self.selectedRecipeIndex = 0
+                                        self.isRecipeGenerated = true
+                                        self.saveRecipeToFirestore(recipe: singleRecipe)
+                                    }
+                                } else {
+                                    DispatchQueue.main.async {
+                                        self.generatedRecipe = "Error parsing single recipe structure."
+                                    }
+                                }
+                            } else {
+                                DispatchQueue.main.async {
+                                    self.generatedRecipe = "Invalid response format."
+                                }
+                            }
+                        } catch {
+                            DispatchQueue.main.async {
+                                self.generatedRecipe = "Error parsing JSON structure from response: \(error.localizedDescription)"
+                            }
                         }
-                    } else {
-                        DispatchQueue.main.async {
-                            self.generatedRecipe = "Error parsing JSON structure from response."
-                        }
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self.generatedRecipe = "Invalid response format."
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.generatedRecipe = "Error parsing response: \(error.localizedDescription)"
+                    self.generatedRecipe = "Error parsing JSON: \(error.localizedDescription)"
                 }
             }
-        }
-        .resume()
+        }.resume()
     }
     
-    private func saveRecipeToFirestore(recipeText: String, title: String) {
+    func saveRecipeToFirestore(recipe: Recipe) {
         guard let user = Auth.auth().currentUser else { return }
-        let recipe = Recipe(
-            recipeId: nil,
-            title: title,
-            text: recipeText,
-            ingredients: self.userInput,
-            mealType: "",
-            timestamp: Date(),
-            isFavorite: false
-        )
         do {
+            // Print the document ID (should be nil)
+            print("Recipe id before saving: \(recipe.id ?? "nil")")
+            
+            // Print the timestamp (should be nil since we want Firestore to set it)
+            if let timestamp = recipe.timestamp {
+                print("Timestamp before saving: \(timestamp)")
+            } else {
+                print("Timestamp before saving: nil")
+            }
+            
             let _ = try Firestore.firestore()
                 .collection("users")
                 .document(user.uid)
                 .collection("recipes")
                 .addDocument(from: recipe)
+            print("Successfully saved recipe: \(recipe.title)")
         } catch {
             print("Error saving recipe: \(error.localizedDescription)")
         }
