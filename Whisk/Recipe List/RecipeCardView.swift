@@ -34,11 +34,21 @@ struct RecipeCardView: View {
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                ForEach(recipe.ingredients, id: \.self) { ingredient in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("•")
-                        Text(ingredient)
-                            .font(.body)
+                if let ingredientsGroups = recipe.ingredients {
+                    ForEach(Array(ingredientsGroups.keys.sorted()), id: \.self) { group in
+                        // Only show the group header if it isn't the default "All" grouping.
+                        if group != "All" {
+                            Text(group)
+                                .font(.headline)
+                                .padding(.top, 4)
+                        }
+                        ForEach(ingredientsGroups[group] ?? [], id: \.self) { ingredient in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                Text(ingredient)
+                                    .font(.body)
+                            }
+                        }
                     }
                 }
                 
@@ -50,12 +60,26 @@ struct RecipeCardView: View {
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                ForEach(recipe.instructions, id: \.self) { instruction in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("•")
-                        Text(instruction)
-                            .font(.body)
+                if let instructionsGroups = recipe.instructions {
+                    ForEach(Array(instructionsGroups.keys.sorted()), id: \.self) { group in
+                        // Optionally show the group header if the group is not "All"
+                        if group != "All" {
+                            Text(group)
+                                .font(.headline)
+                                .padding(.top, 4)
+                        }
+                        ForEach(instructionsGroups[group] ?? [], id: \.self) { step in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                Text(step)
+                                    .font(.body)
+                            }
+                        }
                     }
+                } else {
+                    Text("No instructions available.")
+                        .font(.body)
+                        .foregroundColor(.gray)
                 }
             }
             .padding()

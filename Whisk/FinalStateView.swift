@@ -140,23 +140,27 @@ struct FinalStateView_Previews: PreviewProvider {
         title: "Classic Caesar Salad 🥗",
         text: "A traditional Caesar salad featuring crisp romaine, creamy dressing, crunchy croutons, and Parmesan cheese.",
         ingredients: [
-            "2 romaine lettuce hearts",
-            "1/2 cup Caesar dressing",
-            "1/2 cup grated Parmesan cheese",
-            "1 cup croutons",
-            "2 tablespoons olive oil",
-            "1 clove garlic, minced",
-            "Salt and pepper to taste",
-            "2 anchovy fillets (optional)",
-            "Lemon wedges for serving"
+            "All": [
+                "2 romaine lettuce hearts",
+                "1/2 cup Caesar dressing",
+                "1/2 cup grated Parmesan cheese",
+                "1 cup croutons",
+                "2 tablespoons olive oil",
+                "1 clove garlic, minced",
+                "Salt and pepper to taste",
+                "2 anchovy fillets (optional)",
+                "Lemon wedges for serving"
+            ]
         ],
         instructions: [
-            "Wash and dry the romaine lettuce, then tear into bite-sized pieces.",
-            "Toss the lettuce with Caesar dressing until evenly coated.",
-            "Heat olive oil in a pan, sauté garlic (and anchovies if desired) until aromatic.",
-            "Top with croutons and Parmesan cheese.",
-            "Season with salt and pepper.",
-            "Serve with lemon wedges."
+            "All": [
+                "Wash and dry the romaine lettuce, then tear into bite-sized pieces.",
+                "Toss the lettuce with Caesar dressing until evenly coated.",
+                "Heat olive oil in a pan, sauté garlic (and anchovies if desired) until aromatic.",
+                "Top with croutons and Parmesan cheese.",
+                "Season with salt and pepper.",
+                "Serve with lemon wedges."
+            ]
         ],
         mealType: "",
         timestamp: nil,

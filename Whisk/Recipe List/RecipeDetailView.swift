@@ -36,15 +36,27 @@ struct RecipeDetailView: View {
                         .bold()
                         .padding(.bottom, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(recipe.ingredients, id: \.self) { ingredient in
-                            HStack(alignment: .top, spacing: 8) {
-                                Text("•")
-                                Text(ingredient)
-                                    .font(.body)
+
+                    if let ingredientsGroups = recipe.ingredients {
+                        ForEach(Array(ingredientsGroups.keys.sorted()), id: \.self) { group in
+                            if group != "All" {
+                                Text(group)
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            ForEach(ingredientsGroups[group] ?? [], id: \.self) { ingredient in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text("•")
+                                    Text(ingredient)
+                                        .font(.body)
+                                }
                             }
                         }
+                    } else {
+                        Text("No ingredients provided.")
+                            .font(.body)
+                            .foregroundColor(.gray)
                     }
                     
                     Divider()
@@ -52,20 +64,33 @@ struct RecipeDetailView: View {
                         .padding(.vertical, 4)
                     
                     // Instructions
+                    // Cooking Instructions Section
                     Text("Cooking Instructions 👨‍🍳")
                         .font(.title2)
                         .bold()
                         .padding(.bottom, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(recipe.instructions, id: \.self) { instruction in
-                            HStack(alignment: .top, spacing: 8) {
-                                Text("•")
-                                Text(instruction)
-                                    .font(.body)
+
+                    if let instructionsGroups = recipe.instructions {
+                        ForEach(Array(instructionsGroups.keys.sorted()), id: \.self) { group in
+                            if group != "All" {
+                                Text(group)
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            ForEach(instructionsGroups[group] ?? [], id: \.self) { step in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text("•")
+                                    Text(step)
+                                        .font(.body)
+                                }
                             }
                         }
+                    } else {
+                        Text("No instructions available.")
+                            .font(.body)
+                            .foregroundColor(.gray)
                     }
                 }
                 .padding()
