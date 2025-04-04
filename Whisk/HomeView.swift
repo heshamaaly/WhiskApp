@@ -65,19 +65,7 @@ struct HomeView: View {
                         
                         Spacer()
                     }
-                    //Toolbar for empty state
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button(action: { showAccountSheet = true }) {
-                                Image(systemName: "person.fill") //Made this a square for testing!!
-                                    //.symbolEffect(.appear)
-                                    .foregroundStyle(Color.black)
-                            }
-                        }
-                    }
-                    .sheet(isPresented: $showAccountSheet) {
-                        AccountView()
-                    }
+                    
                     
                 } else {
                     FinalStateView(
@@ -86,9 +74,25 @@ struct HomeView: View {
                         selectedRecipeIndex: $selectedRecipeIndex,
                         animation: animation,
                         onRegenerate: { generateRecipe() },
-                        isLoading: isLoading
+                        isLoading: isLoading,
+                        isRecipeGenerated: $isRecipeGenerated
                     )
                 }
+                }
+            
+            //Toolbar for empty state
+                .toolbar {
+                        if !isRecipeGenerated {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { showAccountSheet = true }) {
+                                    Image(systemName: "person.fill")
+                                        .foregroundStyle(Color.black)
+                                }
+                            }
+                        }
+                    }
+                    .sheet(isPresented: $showAccountSheet) {
+                        AccountView()
             }
             
         }

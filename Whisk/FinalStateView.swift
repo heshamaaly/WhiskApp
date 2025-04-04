@@ -15,9 +15,9 @@ struct FinalStateView: View {
     let onRegenerate: () -> Void
     let isLoading: Bool
     @State private var showAccountSheet = false
+    @Binding var isRecipeGenerated: Bool
     
     var body: some View {
-        NavigationView {
             // Wrap the entire content in a ZStack so that we can overlay the loading view.
             ZStack {
                 // Base content: All final-state content is scrollable.
@@ -107,12 +107,18 @@ struct FinalStateView: View {
             //FinalState Toolbar
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Image("WhiskLogoCompact")
-                     .resizable()
-                     .scaledToFit()
-                     .frame(width: 40, height: 40)
-                     
-                }
+                    Button(action: {
+                            withAnimation {
+                                isRecipeGenerated = false
+                                userInput = ""  // Clear the text input
+                            }
+                        }) {
+                            Image("WhiskLogoCompact")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60, height: 60)
+                        }
+                    }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showAccountSheet = true }) {
                         Image(systemName: "person.fill")
@@ -122,7 +128,6 @@ struct FinalStateView: View {
             }
             .sheet(isPresented: $showAccountSheet) {
                 AccountView() }
-        }
     
         // Animate changes to isLoading.
         .animation(.easeInOut(duration: 0.5), value: isLoading)
@@ -130,39 +135,39 @@ struct FinalStateView: View {
 }
 
 
-// Preview
 
+// Preview
 struct FinalStateView_Previews: PreviewProvider {
     @Namespace static var animation
-    
-    static var sampleRecipe = Recipe(
+
+    static var sampleRecipe: Recipe = Recipe(
         recipeId: nil,
         title: "Classic Caesar Salad 🥗",
-        text: "A traditional Caesar salad featuring crisp romaine, creamy dressing, crunchy croutons, and Parmesan cheese.",
+        text: "A refreshing salad featuring crisp romaine, crunchy croutons, and tangy Parmesan cheese.",
+        totalTime: "30 minutes",
+        servings: "4",
         ingredients: [
             "All": [
                 "2 romaine lettuce hearts",
                 "1/2 cup Caesar dressing",
                 "1/2 cup grated Parmesan cheese",
-                "1 cup croutons",
-                "2 tablespoons olive oil",
-                "1 clove garlic, minced",
-                "Salt and pepper to taste",
-                "2 anchovy fillets (optional)",
-                "Lemon wedges for serving"
+                "1 cup croutons"
             ]
         ],
         instructions: [
             "All": [
-                "Wash and dry the romaine lettuce, then tear into bite-sized pieces.",
-                "Toss the lettuce with Caesar dressing until evenly coated.",
-                "Heat olive oil in a pan, sauté garlic (and anchovies if desired) until aromatic.",
-                "Top with croutons and Parmesan cheese.",
-                "Season with salt and pepper.",
-                "Serve with lemon wedges."
+                "Wash and dry the romaine lettuce, then tear into bite-size pieces.",
+                "Toss lettuce with Caesar dressing until evenly coated.",
+                "Top with croutons and grated Parmesan cheese."
             ]
         ],
-        mealType: "",
+        tips: [
+            "All": [
+                "For extra protein, add grilled chicken.",
+                "Try kale for a twist."
+            ]
+        ],
+        mealType: "Salad",
         timestamp: nil,
         isFavorite: false
     )
@@ -170,26 +175,33 @@ struct FinalStateView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             // Preview with a single recipe
-            FinalStateView(
-                userInput: .constant("High protein dinner ideas"),
-                recipes: [sampleRecipe],
-                selectedRecipeIndex: .constant(0),
-                animation: animation,
-                onRegenerate: { print("Regenerate tapped") },
-                isLoading: false
-            )
+            NavigationView {
+                FinalStateView(
+                    userInput: .constant("Healthy Caesar Salad"),
+                    recipes: [sampleRecipe],
+                    selectedRecipeIndex: .constant(0),
+                    animation: animation,
+                    onRegenerate: { print("Regenerate tapped") },
+                    isLoading: false,
+                    isRecipeGenerated: .constant(true)
+                )
+            }
             .previewDisplayName("Final State - Single Recipe")
             
-            // Preview with multiple recipes, second recipe selected.
-            FinalStateView(
-                userInput: .constant("High protein dinner ideas"),
-                recipes: [sampleRecipe, sampleRecipe, sampleRecipe],
-                selectedRecipeIndex: .constant(1),
-                animation: animation,
-                onRegenerate: { print("Regenerate tapped") },
-                isLoading: false
-            )
-            .previewDisplayName("Final State - Multiple Recipes")
+            // Preview with multiple recipes (3 recipes)
+            NavigationView {
+                FinalStateView(
+                    userInput: .constant("Healthy dinner ideas"),
+                    recipes: [sampleRecipe, sampleRecipe, sampleRecipe],
+                    selectedRecipeIndex: .constant(1),
+                    animation: animation,
+                    onRegenerate: { print("Regenerate tapped") },
+                    isLoading: false,
+                    isRecipeGenerated: .constant(true)
+                )
+            }
+            .previewDisplayName("Final State - Multi Recipe")
         }
     }
 }
+

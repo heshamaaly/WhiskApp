@@ -4,6 +4,7 @@
 //
 //  Created by Hesham Aly on 3/27/25.
 //
+
 import SwiftUI
 import FirebaseAuth
 
@@ -14,7 +15,7 @@ struct LoginView: View {
     @State private var showSignUp = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Text("Welcome to Whisk!")
                     .font(.largeTitle)
@@ -48,15 +49,15 @@ struct LoginView: View {
                 
                 Spacer()
                 
-                // Navigation link to the sign-up view
-                NavigationLink(destination: SignUpView(), isActive: $showSignUp) {
-                    Button("Don't have an account? Sign Up") {
-                        showSignUp = true
-                    }
+                Button("Don't have an account? Sign Up") {
+                    showSignUp = true
                 }
                 .padding(.bottom, 20)
             }
             .padding()
+            .navigationDestination(isPresented: $showSignUp) {
+                SignUpView()
+            }
         }
     }
     
@@ -67,9 +68,15 @@ struct LoginView: View {
             } else {
                 errorMessage = ""
                 // Proceed to the main app view after successful sign in.
-                // This is where you'd typically update your app's state to show the main content.
             }
         }
     }
 }
 
+// Preview Function
+
+struct LoginView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoginView()
+    }
+}
