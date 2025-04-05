@@ -6,6 +6,11 @@
 //
 
 import SwiftUI
+import FirebaseCore
+import FirebaseAuth
+import GoogleSignIn
+
+
 
 struct GetStartedView: View {
     // Callback actions for buttons:
@@ -153,6 +158,58 @@ struct GetStartedView: View {
                 NavigationLink(destination: LoginView(), isActive: $showLogin) {
                 EmptyView()
                             }
+        }
+    }
+}
+
+// Google Sign-in Handling
+func handleGoogleSignIn() {
+    // Ensure the Firebase clientID is available.
+    guard let clientID = FirebaseApp.app()?.options.clientID else {
+        print("Missing Firebase clientID")
+        return
+    }
+    
+    // Create a Google Sign-In configuration object.
+    let config = GIDConfiguration(clientID: clientID)
+    
+    // Retrieve the root view controller from the current window.
+    guard let rootViewController = UIApplication.shared.windows.first?.rootViewController else {
+        print("Unable to get rootViewController")
+        return
+    }
+    
+    // Initiate Google Sign-In using the updated API.
+    GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController, hint: nil, additionalScopes: []) { result, error in
+        if let error = error {
+            print("Error during Google Sign-In: \(error.localizedDescription)")
+            return
+        }
+        
+        guard let result = result else {
+            print("Error retrieving sign-in result")
+            return
+        }
+        
+        let user = result.user
+        
+        // Extract the tokens using the tokenString property.
+        guard let idTokenString = user.idToken?.tokenString else {
+            print("Error retrieving id token")
+            return
+        }
+        let accessTokenString = user.accessToken.tokenString
+        
+        // Create a Firebase credential using the Google tokens.
+        let credential = GoogleAuthProvider.credential(withIDToken: idTokenString, accessToken: accessTokenString)
+        
+        // Sign in with Firebase.
+        Auth.auth().signIn(with: credential) { authResult, error in
+            if let error = error {
+                print("Firebase sign in error: \(error.localizedDescription)")
+            } else {
+                print("Successfully signed in with Google!")
+            }
         }
     }
 }

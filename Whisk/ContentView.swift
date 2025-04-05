@@ -18,7 +18,7 @@ struct ContentView: View {
                     MainTabView()
                 } else {
                     GetStartedView(
-                        onGoogleSignIn: { /* Implement Google sign-in action */ },
+                        onGoogleSignIn: { handleGoogleSignIn() },
                         onAppleSignIn: { /* Implement Apple sign-in action */ }
                         // If your GetStartedView also supports other actions (like onGetStarted or onLogin),
                         // pass those closures here as needed.
