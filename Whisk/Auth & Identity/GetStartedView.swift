@@ -12,6 +12,8 @@ struct GetStartedView: View {
     //let onGetStarted: () -> Void
     let onGoogleSignIn: () -> Void
     let onAppleSignIn: () -> Void
+    @State private var showSignUp = false
+    @State private var showLogin = false
     //let onLogin: () -> Void
     
     var body: some View {
@@ -97,7 +99,12 @@ struct GetStartedView: View {
                     }
                     
                     // Get Started CTA
-                    NavigationLink(destination: SignUpView()) {
+                    // Get Started CTA
+                    Button(action: {
+                        withAnimation {
+                            showSignUp = true
+                        }
+                    }) {
                         Text("Get Started")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
@@ -121,11 +128,15 @@ struct GetStartedView: View {
                 HStack {
                     Text("Already have an account?")
                         .foregroundColor(.gray)
-                    NavigationLink(destination: LoginView()) {
-                            Text("Login")
-                                .fontWeight(.bold)
-                                .foregroundColor(.black)
+                    Button(action: {
+                        withAnimation {
+                            showLogin = true
                         }
+                    }) {
+                        Text("Login")
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                    }
                 }
                 .padding(.bottom, 60)
                 .padding(.top, 40)
@@ -134,6 +145,14 @@ struct GetStartedView: View {
             
             .padding(.top, 65)
             .padding(.horizontal, 60)
+            
+            // Hidden NavigationLinks for programmatic navigation
+                NavigationLink(destination: SignUpView(), isActive: $showSignUp) {
+                EmptyView()
+                        }
+                NavigationLink(destination: LoginView(), isActive: $showLogin) {
+                EmptyView()
+                            }
         }
     }
 }

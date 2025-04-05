@@ -38,8 +38,14 @@ struct LoginView: View {
                         .foregroundColor(.white)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .cornerRadius(8)
+                        .background(Color.accentColor)
+                        .cornerRadius(15)
+                        .shadow(
+                            color: Color(red: 1.0, green: 192/255, blue: 0.0).opacity(0.8),
+                            radius: 25,
+                            x: 0,
+                            y: 4.34
+                            )
                 }
                 
                 if !errorMessage.isEmpty {
