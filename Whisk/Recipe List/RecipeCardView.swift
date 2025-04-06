@@ -9,6 +9,26 @@ import SwiftUI
 
 struct RecipeCardView: View {
     let recipe: Recipe
+    private var ingredientOrder: [String] {
+        if let groups = recipe.ingredients {
+            return recipe.ingredientsOrder ?? Array(groups.keys)
+        }
+        return []
+    }
+
+    private var instructionOrder: [String] {
+        if let groups = recipe.instructions {
+            return recipe.instructionsOrder ?? Array(groups.keys)
+        }
+        return []
+    }
+
+    private var tipOrder: [String] {
+        if let groups = recipe.tips {
+            return recipe.tipsOrder ?? Array(groups.keys)
+        }
+        return []
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -63,14 +83,14 @@ struct RecipeCardView: View {
                     .font(.title2)
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 if let ingredientsGroups = recipe.ingredients {
-                    ForEach(Array(ingredientsGroups.keys.sorted()), id: \.self) { group in
-                        // Only show the group header if it isn't the default "All" grouping.
+                    ForEach(ingredientOrder, id: \.self) { group in
                         if group != "All" {
                             Text(group)
                                 .font(.headline)
                                 .padding(.top, 4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         ForEach(ingredientsGroups[group] ?? [], id: \.self) { ingredient in
                             HStack(alignment: .top, spacing: 8) {
@@ -80,6 +100,10 @@ struct RecipeCardView: View {
                             }
                         }
                     }
+                } else {
+                    Text("No ingredients available.")
+                        .font(.body)
+                        .foregroundColor(.gray)
                 }
                 
                 Divider()
@@ -90,14 +114,14 @@ struct RecipeCardView: View {
                     .font(.title2)
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
-                if let instructionsGroups = recipe.instructions {
-                    ForEach(Array(instructionsGroups.keys.sorted()), id: \.self) { group in
-                        // Optionally show the group header if the group is not "All"
+
+                if let instructionsGroups = recipe.instructions, !instructionsGroups.isEmpty {
+                    ForEach(instructionOrder, id: \.self) { group in
                         if group != "All" {
                             Text(group)
                                 .font(.headline)
                                 .padding(.top, 4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         ForEach(instructionsGroups[group] ?? [], id: \.self) { step in
                             HStack(alignment: .top, spacing: 8) {
@@ -109,8 +133,8 @@ struct RecipeCardView: View {
                     }
                 } else {
                     Text("No instructions available.")
-                        .font(.body)
-                        .foregroundColor(.gray)
+                         .font(.body)
+                         .foregroundColor(.gray)
                 }
                 
                 Divider()
@@ -121,10 +145,9 @@ struct RecipeCardView: View {
                     .font(.title2)
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 if let tipsGroups = recipe.tips {
-                    ForEach(Array(tipsGroups.keys.sorted()), id: \.self) { group in
-                        // Only show the group header if it isn't the default "All" grouping.
+                    ForEach(tipOrder, id: \.self) { group in
                         if group != "All" {
                             Text(group)
                                 .font(.headline)
@@ -144,8 +167,6 @@ struct RecipeCardView: View {
                         .font(.body)
                         .foregroundColor(.gray)
                 }
-                
-                
                 
             }
             .padding()

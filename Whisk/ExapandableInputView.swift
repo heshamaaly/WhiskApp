@@ -8,6 +8,7 @@ import SwiftUI
 
 struct ExpandableInputView: View {
     @Binding var text: String
+    @FocusState private var isInputFocused: Bool
     let onSubmit: () -> Void
 
     var body: some View {
@@ -17,6 +18,7 @@ struct ExpandableInputView: View {
                 // Single-line TextField
                 TextField("Describe your meal", text: $text)
                     .textFieldStyle(PlainTextFieldStyle())
+                    .focused($isInputFocused)
                 // Some horizontal padding inside the field
                     .padding(.horizontal, 20)
                 // Minimum height for a comfortable tap target

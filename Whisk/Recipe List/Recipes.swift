@@ -18,6 +18,9 @@ struct Recipe: Identifiable, Codable {
     var ingredients: [String: [String]]?
     var instructions: [String: [String]]?
     var tips: [String: [String]]?
+    var instructionsOrder: [String]?
+    var ingredientsOrder: [String]?
+    var tipsOrder: [String]?
     var mealType: String
     @ServerTimestamp var timestamp: Timestamp?
     var isFavorite: Bool
