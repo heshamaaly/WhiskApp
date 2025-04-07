@@ -23,20 +23,19 @@ struct FinalStateView: View {
                 // Base content: All final-state content is scrollable.
                 ScrollView {
                     VStack(spacing: 16) {
-                        //Logo
-                        //Image("WhiskLogo")
-                        //   .resizable()
-                        //   .scaledToFit()
-                        //   .frame(width: 100, height: 80) // Adjust as needed
                         
                         // Add some top spacing if needed.
-                        Spacer().frame(height: 5)
+                        Spacer().frame(height: 2)
                         
                         // Input view at the top.
-                        ExpandableInputView(text: $userInput) {
+                        ExpandableInputView(text: $userInput, onSubmit: {
                             onRegenerate()
-                        }
-                        .frame(maxWidth: 350)
+                        }, showClearButton: true, onClear: {
+                            userInput = ""
+                        })
+                        
+                        .padding(.horizontal, 60)
+                        //.frame(maxWidth: 350)
                         .matchedGeometryEffect(id: "textBox", in: animation)
                         .padding(.bottom, 45)
                         .zIndex(1)

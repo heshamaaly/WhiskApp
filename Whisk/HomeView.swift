@@ -54,7 +54,7 @@ struct HomeView: View {
                         // Large logo from LogoHeaderView
                         LogoHeaderView()
                             .matchedGeometryEffect(id: "logo", in: animation)
-                        
+                        Spacer()
                         // Expandable input view for user text input.
                         ExpandableInputView(text: $userInput) {
                             generateRecipe()
@@ -71,7 +71,7 @@ struct HomeView: View {
                                 .padding()
                         }
                         
-                        Spacer()
+                        //Spacer()
                     }
                     .onAppear {
                         DispatchQueue.main.async {
