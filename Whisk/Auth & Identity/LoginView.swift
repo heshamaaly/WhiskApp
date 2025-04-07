@@ -19,21 +19,28 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("Welcome to Whisk!")
+                Spacer()
+                Image("WhiskLogoCompact") //
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 140) // Adjust as needed
+                
+                Text("Sign In")
                     .font(.largeTitle)
                     .bold()
+                    .padding(.bottom, 20)
                 
                 TextField("Email", text: $email)
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
                     .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(15)
                 
                 SecureField("Password", text: $password)
                     .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(15)
                 
                 Button(action: {
                     isSigningIn = true
@@ -72,6 +79,7 @@ struct LoginView: View {
                     .padding(.bottom, 20)
                 }
                 .padding()
+                .padding(.horizontal, 25)
                 .navigationDestination(isPresented: $showSignUp) {
                     SignUpView()
                 }
