@@ -140,9 +140,7 @@ struct HomeView: View {
         let prompt = """
         Generate a well-structured, easy-to-follow recipe that feels approachable and modern based on the following description: "\(userInput)".
         
-        The recipe should:
-        • Appeal to someone who wants yummy, healthy meals without being overly complex.
-        • Use clear, simple instructions with minimal fluff.
+        The recipe should use clear, simple instructions with minimal fluff.
         
         Format the recipe so that it is easy to read and enjoyable to cook from. Please follow these guidelines for each section:
                 • Title: A clear, enticing title with an appropriate emoji
