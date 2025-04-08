@@ -30,7 +30,7 @@ struct GetStartedView: View {
                 .ignoresSafeArea()
             
             // 2) Full-screen White Fade Overlay
-            Image("ProtectionLayer") // Replace with your actual fade image name
+            Image("ProtectionLayer")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()

@@ -176,7 +176,9 @@ struct HomeView: View {
                 ["role": "system", "content": "You are a helpful recipe generator named Whisk."],
                 ["role": "user", "content": prompt]
             ],
+            "temperature": 0.5,
             "max_tokens": 1600
+            
         ]
         
         do {
