@@ -35,6 +35,7 @@ struct FinalStateView: View {
                         })
                         
                         .padding(.horizontal, 60)
+                        //.scaleEffect(0.8) // Shrinks the entire view to 80%
                         //.frame(maxWidth: 350)
                         .matchedGeometryEffect(id: "textBox", in: animation)
                         .padding(.bottom, 45)

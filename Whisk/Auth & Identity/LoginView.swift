@@ -24,7 +24,7 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 140) // Adjust as needed
-                
+                Spacer()
                 Text("Sign In")
                     .font(.largeTitle)
                     .bold()
@@ -35,12 +35,12 @@ struct LoginView: View {
                     .autocapitalization(.none)
                     .padding()
                     .background(.ultraThinMaterial)
-                    .cornerRadius(15)
+                    .cornerRadius(12)
                 
                 SecureField("Password", text: $password)
                     .padding()
                     .background(.ultraThinMaterial)
-                    .cornerRadius(15)
+                    .cornerRadius(12)
                 
                 Button(action: {
                     isSigningIn = true
@@ -54,10 +54,11 @@ struct LoginView: View {
                     } else {
                         Text("Sign In")
                             .foregroundColor(.white)
+                            .fontWeight(.bold)
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(Color.accentColor)
-                            .cornerRadius(15)
+                            .cornerRadius(12)
                             .shadow(
                                 color: Color(red: 1.0, green: 192/255, blue: 0.0).opacity(0.8),
                                 radius: 25,
@@ -72,11 +73,13 @@ struct LoginView: View {
                     }
                     
                     Spacer()
+                Spacer()
                     
                     Button("Don't have an account? Sign Up") {
                         showSignUp = true
                     }
                     .padding(.bottom, 20)
+                    .foregroundColor(.black)
                 }
                 .padding()
                 .padding(.horizontal, 25)
