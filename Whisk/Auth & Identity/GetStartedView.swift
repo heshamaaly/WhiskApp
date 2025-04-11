@@ -163,7 +163,12 @@ struct GetStartedView: View {
                 NavigationLink(destination: LoginView(), isActive: $showLogin) {
                 EmptyView()
                             }
+            
         }
+        .onAppear {
+            appleSignInCoordinator.onSignInSuccess = onAppleSignIn
+        }
+        
     }
 }
 
@@ -226,6 +231,9 @@ final class SignInWithAppleCoordinator: NSObject, ASAuthorizationControllerDeleg
     // This will hold the nonce so that it is available when the Apple sign-in callback fires.
     var currentNonce: String?
     
+    // New completion callback for successful sign in
+    var onSignInSuccess: (() -> Void)?
+    
     /// Initiates Sign in with Apple.
     func startSignInWithAppleFlow() {
         // Generate a random nonce.
@@ -251,13 +259,11 @@ final class SignInWithAppleCoordinator: NSObject, ASAuthorizationControllerDeleg
     // MARK: - ASAuthorizationControllerDelegate methods
     
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        // Check that we have an Apple credential.
         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
             guard let nonce = currentNonce else {
                 print("Invalid state: no nonce was set")
                 return
             }
-            // Get the identity token from Apple.
             guard let appleIDToken = appleIDCredential.identityToken,
                   let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
                 print("Unable to retrieve or serialize Apple identity token")
@@ -273,6 +279,10 @@ final class SignInWithAppleCoordinator: NSObject, ASAuthorizationControllerDeleg
                     print("Firebase sign in error: \(error.localizedDescription)")
                 } else {
                     print("Successfully signed in with Apple and Firebase!")
+                    // Invoke the completion callback to update the UI
+                    DispatchQueue.main.async {
+                        self.onSignInSuccess?()
+                    }
                 }
             }
         }
