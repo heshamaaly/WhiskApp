@@ -9,6 +9,8 @@ import SwiftUI
 import FirebaseCore
 import FirebaseAuth
 import GoogleSignIn
+import AuthenticationServices
+import CryptoKit
 
 
 
@@ -19,7 +21,8 @@ struct GetStartedView: View {
     let onAppleSignIn: () -> Void
     @State private var showSignUp = false
     @State private var showLogin = false
-    //let onLogin: () -> Void
+    //Apple Sign In
+    @StateObject private var appleSignInCoordinator = SignInWithAppleCoordinator()
     
     var body: some View {
         ZStack {
@@ -84,8 +87,10 @@ struct GetStartedView: View {
                             .cornerRadius(15)
                         }
                         
-                        // Apple CTA
-                        Button(action: onAppleSignIn) {
+                        // Sign-in with Apple CTA
+                        Button(action: {
+                            appleSignInCoordinator.startSignInWithAppleFlow()
+                        }) {
                             HStack {
                                 Image(systemName: "apple.logo") // Replace with your actual Apple logo asset
                                     .resizable()
@@ -213,6 +218,121 @@ func handleGoogleSignIn() {
         }
     }
 }
+
+// Sign in with Apple Function
+
+final class SignInWithAppleCoordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding, ObservableObject {
+    
+    // This will hold the nonce so that it is available when the Apple sign-in callback fires.
+    var currentNonce: String?
+    
+    /// Initiates Sign in with Apple.
+    func startSignInWithAppleFlow() {
+        // Generate a random nonce.
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        
+        // Create an Apple ID request.
+        let appleIDProvider = ASAuthorizationAppleIDProvider()
+        let request = appleIDProvider.createRequest()
+        
+        // Request full name and email from the user.
+        request.requestedScopes = [.fullName, .email]
+        // Set the hashed nonce.
+        request.nonce = sha256(nonce)
+        
+        // Create and perform the authorization controller.
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        authorizationController.delegate = self
+        authorizationController.presentationContextProvider = self
+        authorizationController.performRequests()
+    }
+    
+    // MARK: - ASAuthorizationControllerDelegate methods
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        // Check that we have an Apple credential.
+        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+            guard let nonce = currentNonce else {
+                print("Invalid state: no nonce was set")
+                return
+            }
+            // Get the identity token from Apple.
+            guard let appleIDToken = appleIDCredential.identityToken,
+                  let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+                print("Unable to retrieve or serialize Apple identity token")
+                return
+            }
+            
+            // Create a Firebase credential using the Apple ID token and nonce.
+            let credential = OAuthProvider.credential(withProviderID: "apple.com", idToken: idTokenString, rawNonce: nonce)
+            
+            // Sign in with Firebase.
+            Auth.auth().signIn(with: credential) { authResult, error in
+                if let error = error {
+                    print("Firebase sign in error: \(error.localizedDescription)")
+                } else {
+                    print("Successfully signed in with Apple and Firebase!")
+                }
+            }
+        }
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        // Handle error.
+        print("Sign in with Apple failed: \(error.localizedDescription)")
+    }
+    
+    // MARK: - ASAuthorizationControllerPresentationContextProviding
+    
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        // Return the key window of the application.
+        return UIApplication.shared.windows.first { $0.isKeyWindow } ?? UIWindow()
+    }
+    
+    // MARK: - Helper methods
+    
+    /// Generates a random nonce string.
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset: [Character] =
+            Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+        
+        while remainingLength > 0 {
+            let randoms: [UInt8] = (0 ..< 16).map { _ in
+                var random: UInt8 = 0
+                let errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+                if errorCode != errSecSuccess {
+                    fatalError("Unable to generate nonce. SecRandomCopyBytes failed with error: \(errorCode)")
+                }
+                return random
+            }
+            
+            randoms.forEach { random in
+                if remainingLength == 0 {
+                    return
+                }
+                if random < charset.count {
+                    result.append(charset[Int(random) % charset.count])
+                    remainingLength -= 1
+                }
+            }
+        }
+        return result
+    }
+    
+    /// Hashes input using SHA256.
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
+
+
 
 // MARK: - Preview
 struct GetStartedView_Previews: PreviewProvider {

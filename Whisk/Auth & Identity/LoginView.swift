@@ -72,7 +72,7 @@ struct LoginView: View {
                             .foregroundColor(.red)
                     }
                     
-                    Spacer()
+                Spacer()
                 Spacer()
                     
                     Button("Don't have an account? Sign Up") {

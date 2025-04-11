@@ -71,8 +71,10 @@ struct SignUpView: View {
             
             Spacer()
             Spacer()
+            Spacer()
         }
-        .padding()
+        //.padding()
+        .padding(.horizontal, 25)
     }
     
     func signUp() {

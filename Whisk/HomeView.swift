@@ -112,6 +112,9 @@ struct HomeView: View {
     }
     
     func generateRecipe() {
+        //Debug logging
+        print("Starting recipe generation for query: \(userInput)")
+        
         // Dismiss the keyboard.
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
@@ -176,9 +179,8 @@ struct HomeView: View {
                 ["role": "system", "content": "You are a helpful recipe generator named Whisk."],
                 ["role": "user", "content": prompt]
             ],
-            "temperature": 0.5,
-            "max_tokens": 1600
-            
+            "max_tokens": 1600,
+            "temperature": 0.4
         ]
         
         do {
