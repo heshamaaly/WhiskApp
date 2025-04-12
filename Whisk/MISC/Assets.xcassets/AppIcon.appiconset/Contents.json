@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Whisk Icon v5.png",
+      "filename" : "Whisk Icon v6.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Whisk Dark Icon.png",
+      "filename" : "Whisk Icon Dark v3.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
