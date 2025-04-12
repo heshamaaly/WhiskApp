@@ -86,6 +86,7 @@ struct FinalStateView: View {
                         // Display the selected recipe details using RecipeCardView.
                         RecipeCardView(recipe: recipes[selectedRecipeIndex])
                             .padding(.horizontal)
+                            .padding(.top, 10)
                         
                         Spacer(minLength: 20)
                     }

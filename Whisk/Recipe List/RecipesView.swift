@@ -13,6 +13,7 @@ struct RecipesView: View {
     @State private var recipes: [Recipe] = []
     @State private var isLoading = true
 
+
     // Define the desired order for groups
     private let groupOrder = ["Today","Yesterday", "In The Last Week", "In The Last Month", "In The Last Year"]
 
@@ -123,10 +124,18 @@ struct RecipesView: View {
                     .lineLimit(2)
             }
             Spacer()
-            if recipe.isFavorite {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+            Button(action: {
+                toggleFavorite(recipe)
+                hapticFeedback()
+            }) {
+                Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(recipe.isFavorite ? .accentColor : .brandGray)
             }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.trailing, 8)
         }
         .contentShape(Rectangle())
     }
@@ -205,8 +214,5 @@ struct RecipesView: View {
     }
 }
 
-struct RecipesView_Previews: PreviewProvider {
-    static var previews: some View {
-        RecipesView()
-    }
-}
+
+// PREVIEW FUNCTION

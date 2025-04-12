@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct RecipeCardView: View {
     let recipe: Recipe
@@ -33,13 +35,33 @@ struct RecipeCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Recipe Title Section
-            Text(recipe.title)
-                .font(.largeTitle)
-                .bold()
-                .foregroundColor(.black)
-                .padding()
-                .background(Color.white)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top) {
+                Text(recipe.title)
+                    .font(.largeTitle)
+                    .bold()
+                    .foregroundColor(.black)
+                    .padding(.horizontal)
+                
+                Spacer()
+                Spacer()
+                
+                Button(action: {
+                    // Call your favorite toggle function.
+                    toggleFavorite(recipe)
+                    // Provide haptic feedback
+                    hapticFeedback()
+                }) {
+                    Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(recipe.isFavorite ? .yellow : .brandGray)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.trailing, 25)
+                .padding(.top, 12)
+            }
+            .background(Color.white)
             
             // 2) Description Section
             Text(recipe.text)
@@ -178,6 +200,42 @@ struct RecipeCardView: View {
         
     }
 }
+
+// Helper for adding Favorite Button
+extension RecipeCardView {
+    private func toggleFavorite(_ recipe: Recipe) {
+        // Ensure you have a valid user and recipe id before attempting a toggle.
+        guard let user = Auth.auth().currentUser,
+              let docId = recipe.id else {
+            print("Cannot toggle favorite: Missing user or recipe id")
+            return
+        }
+        
+        let newFavoriteStatus = !recipe.isFavorite
+        Firestore.firestore()
+            .collection("users")
+            .document(user.uid)
+            .collection("recipes")
+            .document(docId)
+            .updateData(["isFavorite": newFavoriteStatus]) { error in
+                if let error = error {
+                    print("Error updating favorite: \(error.localizedDescription)")
+                } else {
+                    print("Successfully updated favorite status to \(newFavoriteStatus) for recipe: \(recipe.title)")
+                }
+            }
+        
+        // Haptic feedback for user interaction
+        hapticFeedback()
+    }
+    
+    private func hapticFeedback() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+}
+
+
 
 //Preview
 

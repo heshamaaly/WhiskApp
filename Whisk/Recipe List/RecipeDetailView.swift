@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct RecipeDetailView: View {
     let recipe: Recipe
@@ -40,14 +42,35 @@ struct RecipeDetailView: View {
         ScrollView {
             VStack(spacing: 16) {
                 // 1) Title Section
-                Text(recipe.title)
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundColor(.black)
-                    //.padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
-                    .padding(.horizontal, 30)
+                HStack(alignment: .top) {
+                    Text(recipe.title)
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundColor(.black)
+                        .padding(.leading, 30)
+                    
+                    Spacer()
+                    Spacer()
+                    
+                    Button(action: {
+                        // Call your favorite toggle function.
+                        toggleFavorite(recipe)
+                        // Provide haptic feedback
+                        hapticFeedback()
+                    }) {
+                        Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(recipe.isFavorite ? .yellow : .brandGray)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.trailing, 40)
+                    .padding(.top, 12)
+                }
+                .background(Color.white)
+                
+                
                 
                 // 2) Description Section
                 Text(recipe.text)
@@ -193,6 +216,7 @@ struct RecipeDetailView: View {
     }
 }
 
+
 // MARK: - Parsing Logic
 
 /// A naive parser that splits `text` into three parts:
@@ -241,6 +265,39 @@ private func parseRecipeText(_ text: String) -> (description: String, ingredient
     return (descString, ingredientsArray, instructionsArray)
 }
 
+extension RecipeDetailView {
+    private func toggleFavorite(_ recipe: Recipe) {
+        // Ensure you have a valid user and recipe id before attempting a toggle.
+        guard let user = Auth.auth().currentUser,
+              let docId = recipe.id else {
+            print("Cannot toggle favorite: Missing user or recipe id")
+            return
+        }
+        
+        let newFavoriteStatus = !recipe.isFavorite
+        Firestore.firestore()
+            .collection("users")
+            .document(user.uid)
+            .collection("recipes")
+            .document(docId)
+            .updateData(["isFavorite": newFavoriteStatus]) { error in
+                if let error = error {
+                    print("Error updating favorite: \(error.localizedDescription)")
+                } else {
+                    print("Successfully updated favorite status to \(newFavoriteStatus) for recipe: \(recipe.title)")
+                }
+            }
+        
+        // Haptic feedback for user interaction
+        hapticFeedback()
+    }
+    
+    private func hapticFeedback() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+}
+
 
 // Preview function
 
@@ -283,6 +340,32 @@ struct RecipeDetailView_Previews: PreviewProvider {
             isFavorite: false
         )
     }
+
+    // Favorite CTA
+    private func toggleFavorite(_ recipe: Recipe) {
+        // Flip the favorite flag. (This is a placeholder; adapt as needed.)
+        // In a production app, you might update Firestore here.
+        // For instance:
+        guard let user = Auth.auth().currentUser, let docId = recipe.id else { return }
+        let newFavoriteStatus = !recipe.isFavorite
+        Firestore.firestore()
+            .collection("users")
+            .document(user.uid)
+            .collection("recipes")
+            .document(docId)
+            .updateData(["isFavorite": newFavoriteStatus]) { error in
+                if let error = error {
+                    print("Error updating favorite: \(error.localizedDescription)")
+                }
+            }
+        
+        // Optionally, trigger haptic feedback.
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    
+    
     
     static var previews: some View {
         NavigationView {
