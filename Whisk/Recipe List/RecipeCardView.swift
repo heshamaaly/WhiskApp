@@ -11,6 +11,8 @@ import FirebaseFirestore
 
 struct RecipeCardView: View {
     let recipe: Recipe
+    let onToggleFavorite: (Recipe) -> Void
+    
     private var ingredientOrder: [String] {
         if let groups = recipe.ingredients {
             return recipe.ingredientsOrder ?? Array(groups.keys)
@@ -46,10 +48,8 @@ struct RecipeCardView: View {
                 Spacer()
                 
                 Button(action: {
-                    // Call your favorite toggle function.
-                    toggleFavorite(recipe)
-                    // Provide haptic feedback
                     hapticFeedback()
+                    onToggleFavorite(recipe)
                 }) {
                     Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
                         .resizable()
@@ -204,12 +204,20 @@ struct RecipeCardView: View {
 // Helper for adding Favorite Button
 extension RecipeCardView {
     private func toggleFavorite(_ recipe: Recipe) {
-        // Ensure you have a valid user and recipe id before attempting a toggle.
-        guard let user = Auth.auth().currentUser,
-              let docId = recipe.id else {
-            print("Cannot toggle favorite: Missing user or recipe id")
+        if Auth.auth().currentUser == nil {
+            print("Cannot toggle favorite: Missing user (Auth.auth().currentUser is nil).")
             return
         }
+        
+        if let recipeId = recipe.id {
+            print("Toggling favorite for recipe with id: \(recipeId)")
+        } else {
+            print("Cannot toggle favorite: Missing recipe id for recipe '\(recipe.title)'.")
+            return
+        }
+        
+        guard let user = Auth.auth().currentUser,
+              let docId = recipe.id else { return }
         
         let newFavoriteStatus = !recipe.isFavorite
         Firestore.firestore()
@@ -225,8 +233,8 @@ extension RecipeCardView {
                 }
             }
         
-        // Haptic feedback for user interaction
-        hapticFeedback()
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
     
     private func hapticFeedback() {
@@ -238,48 +246,3 @@ extension RecipeCardView {
 
 
 //Preview
-
-struct RecipeCardView_Previews: PreviewProvider {
-    static var sampleRecipe: Recipe = Recipe(
-        recipeId: nil,
-        title: "Classic Caesar Salad 🥗",
-        text: "A refreshing salad featuring crisp romaine, crunchy croutons, and tangy Parmesan cheese.",
-        totalTime: "30 minutes",
-        servings: "4",
-        ingredients: [
-            "Dressing": [
-                "1/2 cup Caesar dressing",
-                "1 clove garlic, minced"
-            ],
-            "Salad": [
-                "2 romaine lettuce hearts",
-                "1 cup croutons",
-                "1/4 cup grated Parmesan cheese"
-            ]
-        ],
-        instructions: [
-            "Preparation": [
-                "Wash and dry the romaine lettuce, then tear into bite-size pieces."
-            ],
-            "Assembly": [
-                "Toss lettuce with Caesar dressing until evenly coated.",
-                "Top with croutons and grated Parmesan cheese."
-            ]
-        ],
-        tips: [
-            "Variations": [
-                "For extra protein, add grilled chicken.",
-                "Try kale for a different twist."
-            ]
-        ],
-        mealType: "Salad",
-        timestamp: nil,
-        isFavorite: false
-    )
-    
-    static var previews: some View {
-        RecipeCardView(recipe: sampleRecipe)
-            .previewLayout(.sizeThatFits)
-            .padding()
-    }
-}

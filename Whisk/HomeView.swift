@@ -36,6 +36,9 @@ struct HomeView: View {
     @State private var multiRecipes: [Recipe] = []
     @State private var selectedRecipeIndex: Int = 0
     
+    //Keyboard Responder
+    @ObservedObject private var keyboardResponder = KeyboardResponder()
+    
     private var openAIAPIKey: String {
         guard let filePath = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
               let plist = NSDictionary(contentsOfFile: filePath),
@@ -50,16 +53,17 @@ struct HomeView: View {
             VStack {
                 if !isRecipeGenerated {
                     // INITIAL STATE: Show large logo and centered text field.
-                    VStack(spacing: 20) {
+                    VStack {
                         // Large logo from LogoHeaderView
                         LogoHeaderView()
                             .matchedGeometryEffect(id: "logo", in: animation)
-                        Spacer()
+                        //Spacer()
                         // Expandable input view for user text input.
                         ExpandableInputView(text: $userInput) {
                             generateRecipe()
                         }
                         .matchedGeometryEffect(id: "textBox", in: animation)
+                        .layoutPriority(1)
                         
                         if isLoading {
                             ProgressView("Whipping Up your Recipe...")
@@ -71,6 +75,9 @@ struct HomeView: View {
                                 .padding()
                         }
                         
+                        if keyboardResponder.currentHeight == 0 {
+                            Spacer()
+                        }
                         //Spacer()
                     }
                     .onAppear {
@@ -82,7 +89,7 @@ struct HomeView: View {
                 } else {
                     FinalStateView(
                         userInput: $userInput,
-                        recipes: multiRecipes,
+                        recipes: $multiRecipes,
                         selectedRecipeIndex: $selectedRecipeIndex,
                         animation: animation,
                         onRegenerate: { generateRecipe() },
@@ -91,6 +98,8 @@ struct HomeView: View {
                     )
                 }
                 }
+            .padding(.bottom, max(0, keyboardResponder.currentHeight - 60))
+            .animation(.easeInOut(duration: 0.25), value: keyboardResponder.currentHeight)
             
             //Toolbar for empty state
                 .toolbar {
@@ -528,30 +537,40 @@ struct HomeView: View {
         return keys
     }
     
-    //Save Recipe Function
-            func saveRecipeToFirestore(recipe: Recipe) {
-                guard let user = Auth.auth().currentUser else { return }
-                do {
-                    // Print the document ID (should be nil)
-                    print("Recipe id before saving: \(recipe.id ?? "nil")")
-                    
-                    // Print the timestamp (should be nil since we want Firestore to set it)
-                    if let timestamp = recipe.timestamp {
-                        print("Timestamp before saving: \(timestamp)")
-                    } else {
-                        print("Timestamp before saving: nil")
-                    }
-                    
-                    let _ = try Firestore.firestore()
-                        .collection("users")
-                        .document(user.uid)
-                        .collection("recipes")
-                        .addDocument(from: recipe)
-                    print("Successfully saved recipe: \(recipe.title)")
-                } catch {
-                    print("Error saving recipe: \(error.localizedDescription)")
-                }
+    // Save Recipe Function
+    func saveRecipeToFirestore(recipe: Recipe) {
+        guard let user = Auth.auth().currentUser else { return }
+        do {
+            // Print the document ID (should be nil initially)
+            print("Recipe id before saving: \(recipe.id ?? "nil")")
+            if let timestamp = recipe.timestamp {
+                print("Timestamp before saving: \(timestamp)")
+            } else {
+                print("Timestamp before saving: nil")
             }
+            
+            // Save the recipe to Firestore and capture the DocumentReference returned.
+            let docRef = try Firestore.firestore()
+                .collection("users")
+                .document(user.uid)
+                .collection("recipes")
+                .addDocument(from: recipe)
+            
+            print("Successfully saved recipe: \(recipe.title) with doc id: \(docRef.documentID)")
+            
+            // Update the local multiRecipes array with the new doc id, if applicable.
+            // This assumes multiRecipes is a @State variable in HomeView.
+            if let index = multiRecipes.firstIndex(where: { $0.title == recipe.title && $0.id == nil }) {
+                multiRecipes[index].id = docRef.documentID
+                print("Updated local recipe id for \(recipe.title) to \(docRef.documentID)")
+            } else {
+                print("Local recipe not found or already updated.")
+            }
+            
+        } catch {
+            print("Error saving recipe: \(error.localizedDescription)")
+        }
+    }
         }
 
 //Preview

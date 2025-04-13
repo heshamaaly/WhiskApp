@@ -45,7 +45,7 @@ struct ExpandableInputView: View {
                             }) {
                                 ZStack {
                                     Circle()
-                                        .foregroundColor(.yellow)
+                                        .foregroundColor(text.isEmpty ? .brandGray : .accentColor)
                                         .frame(width: 36, height: 36)
                                     Image("whiskicon")
                                         .resizable()
@@ -55,6 +55,7 @@ struct ExpandableInputView: View {
                                 }
                             }
                             .padding(.trailing, 8)
+                            .disabled(text.isEmpty)
                         }
                         // Overlay: Clear button appears at the trailing edge if showClearButton is true.
                         if showClearButton && !text.isEmpty {
