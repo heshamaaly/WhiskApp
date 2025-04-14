@@ -183,7 +183,7 @@ struct HomeView: View {
         """
         
         let body: [String: Any] = [
-            "model": "gpt-4o",
+            "model": "gpt-4.1-mini",
             "messages": [
                 ["role": "system", "content": "You are a helpful recipe generator named Whisk."],
                 ["role": "user", "content": prompt]
