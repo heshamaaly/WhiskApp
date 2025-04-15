@@ -36,6 +36,7 @@ struct ExpandableInputView: View {
                                 .focused($isInputFocused)
                                 .padding(.horizontal, 20)
                                 .frame(minHeight: 40)
+                                .fixedSize(horizontal: false, vertical: true)
                             //.frame(width: geometry.size.width * 0.8, alignment: .leading)
                             // CTA button on the right
                             Button(action: {
@@ -85,7 +86,7 @@ struct ExpandableInputView: View {
                 //Horizontal Padding for the overall text box
                 .padding(.horizontal)
                 // This padding moves the entire view up when keyboard appears
-                .padding(.bottom, keyboardOffset)
+                //.padding(.bottom, keyboardOffset)
                 .animation(.easeInOut(duration: 0.3), value: keyboardOffset)
                 // Listen for keyboard show/hide notifications
                 .onAppear {

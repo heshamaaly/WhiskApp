@@ -59,11 +59,16 @@ struct HomeView: View {
                             .matchedGeometryEffect(id: "logo", in: animation)
                         //Spacer()
                         // Expandable input view for user text input.
-                        ExpandableInputView(text: $userInput) {
-                            generateRecipe()
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                              .fill(Color.white)
+                              .matchedGeometryEffect(id: "textBox", in: animation)
+                            
+                            ExpandableInputView(text: $userInput) {
+                                generateRecipe()
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
                         }
-                        .matchedGeometryEffect(id: "textBox", in: animation)
-                        .layoutPriority(1)
                         
                         if isLoading {
                             ProgressView("Whipping Up your Recipe...")
@@ -98,8 +103,13 @@ struct HomeView: View {
                     )
                 }
                 }
-            .padding(.bottom, max(0, keyboardResponder.currentHeight - 60))
-            .animation(.easeInOut(duration: 0.25), value: keyboardResponder.currentHeight)
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
+            .padding(.bottom, max(0, keyboardResponder.currentHeight - 350))
+            .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0), value: keyboardResponder.currentHeight)
+            
+            // Old Animation -> .animation(.easeInOut(duration: 0.3), value: keyboardResponder.currentHeight)
             
             //Toolbar for empty state
                 .toolbar {
@@ -117,6 +127,7 @@ struct HomeView: View {
             }
             
         }
+        
         .animation(.easeInOut(duration: 0.5), value: isRecipeGenerated)
     }
     

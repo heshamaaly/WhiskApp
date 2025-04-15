@@ -32,10 +32,6 @@ struct RecipeDetailView: View {
         }
         return []
     }
-    //[OLD STUFF] Oredering for Groups in Recipes
-    //@State private var instructionsOrder: [String] = []
-    //@State private var ingredientsOrder: [String] = []
-    //@State private var tipsOrder: [String] = []
     
     
     var body: some View {

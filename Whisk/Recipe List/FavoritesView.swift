@@ -80,9 +80,18 @@ struct FavoritesView: View {
                     .lineLimit(2)
             }
             Spacer()
-            // Always show a star icon for favorited recipes.
-            Image(systemName: "star.fill")
-                .foregroundColor(.yellow)
+            Button(action: {
+                toggleFavorite(recipe)
+                hapticFeedback()
+            }) {
+                Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(recipe.isFavorite ? .accentColor : .brandGray)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.trailing, 8)
         }
         .contentShape(Rectangle())
     }
