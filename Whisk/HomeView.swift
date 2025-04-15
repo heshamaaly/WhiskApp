@@ -124,6 +124,13 @@ struct HomeView: View {
         //Debug logging
         print("Starting recipe generation for query: \(userInput)")
         
+        //Context Functions
+        // Compute a comma-separated list of the last 10 seen recipe titles
+        let recentRecipeTitles = multiRecipes.suffix(10).map { $0.title }.joined(separator: ", ")
+
+        // Compute a comma-separated list of all favorite recipe titles from the multiRecipes array.
+        let favoriteRecipeTitles = multiRecipes.filter { $0.isFavorite }.map { $0.title }.joined(separator: ", ")
+        
         // Dismiss the keyboard.
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
@@ -151,6 +158,12 @@ struct HomeView: View {
         
         let prompt = """
         Generate a well-structured, easy-to-follow recipe that feels approachable and modern based on the following description: "\(userInput)".
+        
+        User History Summary:
+        - Recently seen recipes: \(recentRecipeTitles)
+        - Favorite recipes: \(favoriteRecipeTitles)
+
+        Using the favorites as a guide to the user's taste profile, please generate new recipe ideas. The new recipes should incorporate the flavor and style preferences shown in the favorites, but they should also introduce creative variations so that they are not exactly the same as the previously seen dishes.
         
         The recipe should use clear, simple instructions with minimal fluff.
         
@@ -189,7 +202,7 @@ struct HomeView: View {
                 ["role": "user", "content": prompt]
             ],
             "max_tokens": 1600,
-            "temperature": 0.4
+            "temperature": 0.5
         ]
         
         do {
