@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
 struct RecipeDetailView: View {
     let recipe: Recipe
-    
+
     private var ingredientOrder: [String] {
         if let groups = recipe.ingredients {
             return recipe.ingredientsOrder ?? Array(groups.keys)
@@ -46,7 +47,7 @@ struct RecipeDetailView: View {
                         .padding(.leading, 30)
                     
                     Spacer()
-                    Spacer()
+                    Spacer(minLength: 20)
                     
                     Button(action: {
                         // Call your favorite toggle function.
@@ -61,7 +62,21 @@ struct RecipeDetailView: View {
                             .foregroundColor(recipe.isFavorite ? .yellow : .brandGray)
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .padding(.trailing, 40)
+                    .padding(.trailing, 20)
+                    .padding(.top, 12)
+                    
+                    // Share button
+                    Button(action: {
+                        shareRecipeAsPNG()
+                    }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(.gray)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.trailing, 30)
                     .padding(.top, 12)
                 }
                 .background(Color.white)
@@ -212,6 +227,8 @@ struct RecipeDetailView: View {
     }
 }
 
+ 
+
 
 // MARK: - Parsing Logic
 
@@ -291,6 +308,33 @@ extension RecipeDetailView {
     private func hapticFeedback() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
+    }
+    
+    /// Capture the current window as a PNG and present the share sheet
+    private func shareRecipeAsPNG() {
+        // 1) Create a snapshot of just the recipe content
+        let snapshotView = RecipeSnapshotView(recipe: recipe)
+        let hosting = UIHostingController(rootView: snapshotView)
+
+        // Give it a fitting width (minus your horizontal padding) and let height size itself
+        let width = UIScreen.main.bounds.width - 40
+        let targetSize = hosting.sizeThatFits(in: CGSize(width: width, height: .infinity))
+        hosting.view.bounds = CGRect(origin: .zero, size: targetSize)
+
+        // 2) Render that hosting controller to a UIImage
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let image = renderer.image { _ in
+            hosting.view.drawHierarchy(in: hosting.view.bounds, afterScreenUpdates: true)
+        }
+
+        // 3) Present the native share sheet directly
+        let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        // On iPad you must set a sourceView; on iPhone it will default to a bottom pull-up
+        activityVC.popoverPresentationController?.sourceView = UIApplication.shared.windows
+            .first { $0.isKeyWindow }
+        if let root = UIApplication.shared.windows.first(where: { $0.isKeyWindow })?.rootViewController {
+            root.present(activityVC, animated: true, completion: nil)
+        }
     }
 }
 
