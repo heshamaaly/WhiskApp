@@ -14,6 +14,16 @@
 				<string>com.googleusercontent.apps.1024881494123-hojoqocb2cd3rbnq3fks7i2qtvvdvrpa</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>whisk</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>whisk</string>
+			</array>
+		</dict>
 	</array>
 	<key>GIDClientID</key>
 	<string>1024881494123-hojoqocb2cd3rbnq3fks7i2qtvvdvrpa.apps.googleusercontent.com</string>

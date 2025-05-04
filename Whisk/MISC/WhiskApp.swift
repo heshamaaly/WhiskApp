@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import Combine
 
 @main
 struct WhiskApp: App {
@@ -14,12 +15,16 @@ struct WhiskApp: App {
         FirebaseApp.configure()
         FirebaseConfiguration.shared.setLoggerLevel(.debug)
     }
+    @StateObject private var linkHandler = LinkHandler()
     
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(.light) // Forces light mode
+                .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    linkHandler.handle(url: url)
+                }
         }
     }
 }

@@ -9,6 +9,10 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+enum Route: Hashable {
+    case recipe(id: String)
+}
+
 struct HomeView: View {
     //FocusState Variable
     @FocusState private var isInputFocused: Bool
@@ -35,6 +39,11 @@ struct HomeView: View {
     // Multiple recipes support
     @State private var multiRecipes: [Recipe] = []
     @State private var selectedRecipeIndex: Int = 0
+    
+    //Sharing Recipe Support
+    @State private var showAuthAlert = false
+    @State private var alertMessage  = ""
+    @State private var navPath = NavigationPath()
     
     //Keyboard Responder
     @ObservedObject private var keyboardResponder = KeyboardResponder()
@@ -124,6 +133,23 @@ struct HomeView: View {
                     }
                     .sheet(isPresented: $showAccountSheet) {
                         AccountView()
+            //Sharing URL
+                            .onReceive(NotificationCenter.default.publisher(for: .openSharedRecipe)) { note in
+                                if let id = note.object as? String {
+                                    // push or present RecipeDetailView for that id
+                                    // Example if you use NavigationStack:
+                                   //FIX LATER navigationPath.append(Route.recipe(id: id))
+                                }
+                            }
+                            .onReceive(NotificationCenter.default.publisher(for: .showAuthAlert)) { _ in
+                                alertMessage = "You must be signed in to open shared recipes."
+                                showAuthAlert = true
+                            }
+                            .alert("Whisk", isPresented: $showAuthAlert, actions: {
+                                Button("OK", role: .cancel) { }
+                            }, message: {
+                                Text(alertMessage)
+                            })
             }
             
         }

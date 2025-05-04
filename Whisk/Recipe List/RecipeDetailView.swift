@@ -12,6 +12,8 @@ import FirebaseFirestore
 
 struct RecipeDetailView: View {
     let recipe: Recipe
+    
+    @State private var showShareOptions = false
 
     private var ingredientOrder: [String] {
         if let groups = recipe.ingredients {
@@ -67,7 +69,7 @@ struct RecipeDetailView: View {
                     
                     // Share button
                     Button(action: {
-                        shareRecipeAsPNG()
+                        showShareOptions = true          // <-- open our option sheet
                     }) {
                         Image(systemName: "square.and.arrow.up")
                             .resizable()
@@ -224,6 +226,17 @@ struct RecipeDetailView: View {
         }
         .navigationTitle("Recipe Details")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Share Recipe",
+                            isPresented: $showShareOptions,
+                            titleVisibility: .visible) {
+            Button("Send as Picture") {
+                shareRecipeAsPNG()
+            }
+            Button("Send as Whisk Recipe") {
+                shareRecipeAsLink()
+            }
+            Button("Cancel", role: .cancel) { }
+        }
     }
 }
 
@@ -310,6 +323,9 @@ extension RecipeDetailView {
         generator.notificationOccurred(.success)
     }
     
+//MARK: - Sharing Functions
+    
+    //SHARE AS PNG
     /// Capture the current window as a PNG and present the share sheet
     private func shareRecipeAsPNG() {
         // 1) Create a snapshot of just the recipe content
@@ -336,6 +352,25 @@ extension RecipeDetailView {
             root.present(activityVC, animated: true, completion: nil)
         }
     }
+    
+    //Share as URL
+    private func shareRecipeAsLink() {
+        // ensure doc id
+        guard let recipeID = recipe.id else { return }
+
+        // copy to /sharedRecipes (read‑only public collection)
+        let db = Firestore.firestore()
+        guard let data = try? Firestore.Encoder().encode(recipe) else { return }
+        db.collection("sharedRecipes").document(recipeID).setData(data) { _ in
+            if let url = URL(string: "whisk://share?id=\(recipeID)") {
+                let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                if let root = UIApplication.shared.windows.first(where: { $0.isKeyWindow })?.rootViewController {
+                    root.present(vc, animated: true)
+                }
+            }
+        }
+    }
+    
 }
 
 
