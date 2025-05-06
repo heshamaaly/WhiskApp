@@ -21,6 +21,7 @@ struct Recipe: Identifiable, Codable, Hashable {
     var instructionsOrder: [String]?
     var ingredientsOrder: [String]?
     var tipsOrder: [String]?
+    var imageURL: URL? = nil //added for image use
     var mealType: String
     @ServerTimestamp var timestamp: Timestamp?
     var isFavorite: Bool

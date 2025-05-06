@@ -5,15 +5,34 @@
 //  Created by Hesham Aly on 3/29/25.
 //
 
+
 import SwiftUI
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
+import CoreImage
+import CoreImage.CIFilterBuiltins
+
+/// A UIViewRepresentable wrapper for a UIBlurEffectView.
+struct BlurView: UIViewRepresentable {
+    var style: UIBlurEffect.Style = .systemThinMaterial
+
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: style)
+    }
+}
 
 struct RecipeDetailView: View {
     let recipe: Recipe
     
     @State private var showShareOptions = false
+    private let ciContext = CIContext()
+    private let blurFilter = CIFilter.maskedVariableBlur()
+    private let gradientFilter = CIFilter.linearGradient()
 
     private var ingredientOrder: [String] {
         if let groups = recipe.ingredients {
@@ -38,15 +57,57 @@ struct RecipeDetailView: View {
     
     
     var body: some View {
+        
         ScrollView {
-            VStack(spacing: 16) {
+            
+        ZStack(alignment: .top) {
+            if let imageURL = recipe.imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    switch phase {
+                    case .empty, .failure:
+                        Color.gray.opacity(0.1)
+                    case .success(let image):
+                        if let data = try? Data(contentsOf: imageURL),
+                           let blurred = makeBlurredTopMaskImage(from: data) {
+                            Image(uiImage: blurred)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        }
+                    @unknown default:
+                        Color.gray.opacity(0.1)
+                    }
+                }
+                
+                .frame(width: UIScreen.main.bounds.width, height: 470)
+                .clipped()
+                .overlay(
+                  LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: Color.white.opacity(1), location: 0.0),
+                        .init(color: Color.white.opacity(0.7), location: 0.5),
+                        .init(color: Color.clear, location: 1)
+                    ]),
+                    startPoint: .bottom,
+                    endPoint: .center
+                  )
+                  .frame(width: UIScreen.main.bounds.width, height: 470)
+                )
+            }
+            
+           
+                VStack(spacing: 16) {
                 // 1) Title Section
                 HStack(alignment: .top) {
                     Text(recipe.title)
-                        .font(.largeTitle)
+                        .font(.title)
                         .bold()
                         .foregroundColor(.black)
                         .padding(.leading, 30)
+                        
                     
                     Spacer()
                     Spacer(minLength: 20)
@@ -57,31 +118,38 @@ struct RecipeDetailView: View {
                         // Provide haptic feedback
                         hapticFeedback()
                     }) {
-                        Image(systemName: recipe.isFavorite ? "star.fill" : "star.fill")
+                        Image(systemName: recipe.isFavorite ? "star.fill" : "star")
                             .resizable()
                             .scaledToFit()
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.regularMaterial)
                             .frame(width: 24, height: 24)
-                            .foregroundColor(recipe.isFavorite ? .yellow : .brandGray)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.trailing, 20)
                     .padding(.top, 12)
+                    .shadow(color: Color.black.opacity(0.8), radius: 20, x: 2, y: 2)
                     
                     // Share button
                     Button(action: {
                         showShareOptions = true          // <-- open our option sheet
                     }) {
-                        Image(systemName: "square.and.arrow.up")
+                        Image(systemName: "square.and.arrow.up.fill")
                             .resizable()
                             .scaledToFit()
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.regularMaterial)
                             .frame(width: 24, height: 24)
-                            .foregroundColor(.gray)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.trailing, 30)
                     .padding(.top, 12)
+                    .shadow(color: Color.black.opacity(0.8), radius: 20, x: 2, y: 2)
                 }
-                .background(Color.white)
+                //.background(Color.white)
+                //.background(BlurView(style: .systemThinMaterial))
+                .shadow(color: Color.gray.opacity(0.8), radius: 10, x: 2, y: 2)
+                .padding(.top, recipe.imageURL != nil ? 180 : 0)
                 
                 
                 
@@ -221,11 +289,15 @@ struct RecipeDetailView: View {
                 .padding(.horizontal, 20)
                 
                 Spacer()
+                }
+                .padding(.top, recipe.imageURL != nil ? 180 : 8)
             }
-            .padding(.top, 8)
-        }
-        .navigationTitle("Recipe Details")
+        } // end ZStack
+        .edgesIgnoringSafeArea(recipe.imageURL != nil ? .top : [])
+        //.navigationTitle("Recipe Details")
         .navigationBarTitleDisplayMode(.inline)
+        //.toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        //.toolbarBackground(.visible, for: .navigationBar)
         .confirmationDialog("Share Recipe",
                             isPresented: $showShareOptions,
                             titleVisibility: .visible) {
@@ -374,6 +446,54 @@ extension RecipeDetailView {
 }
 
 
+/// Generates a top‑to‑bottom variable blur (Gaussian) image from raw data.
+private func makeBlurredTopMaskImage(from data: Data, radius: Double = 40.0) -> UIImage? {
+    // Convert to CIImage
+    guard let uiImage = UIImage(data: data),
+          let ciInput = CIImage(image: uiImage) else {
+        return nil
+    }
+    // Build white→black gradient mask (white until 30% height, then fade to clear at top)
+    let gradient = CIFilter.linearGradient()
+    let height = ciInput.extent.height
+    let midY = height * 0.5
+    // color0 (white) applies from bottom up to midY; between midY and height it fades to clear
+    gradient.point0 = CGPoint(x: 0, y: 0)
+    gradient.point1 = CGPoint(x: 0, y: midY)
+    gradient.color0 = CIColor(red: 1, green: 1, blue: 1, alpha: 1)
+    gradient.color1 = CIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    guard let mask = gradient.outputImage?.cropped(to: ciInput.extent) else { return nil }
+    // Configure masked blur
+    let blur = CIFilter.maskedVariableBlur()
+    blur.inputImage = ciInput
+    blur.mask = mask
+    blur.radius = Float(radius)
+    // Render
+    let context = CIContext()
+    guard let output = blur.outputImage,
+          let cgImage = context.createCGImage(output, from: ciInput.extent) else {
+        return nil
+    }
+    return UIImage(cgImage: cgImage)
+    /*
+    // --- CoreGraphics mask fallback (if needed) ---
+    // let maskSize = CGSize(width: ciInput.extent.width, height: ciInput.extent.height)
+    // UIGraphicsBeginImageContextWithOptions(maskSize, false, 0)
+    // guard let cgContext = UIGraphicsGetCurrentContext() else { return nil }
+    // let colorSpace = CGColorSpaceCreateDeviceGray()
+    // let colors: [CGFloat] = [1, 1, 0, 1]
+    // guard let cgGradient = CGGradient(colorSpace: colorSpace, colorComponents: colors, locations: [0, 1], count: 2) else { return nil }
+    // cgContext.drawLinearGradient(
+    //     cgGradient,
+    //     start: CGPoint(x: 0, y: maskSize.height),
+    //     end: CGPoint(x: 0, y: 0),
+    //     options: []
+    // )
+    // let cgMask = UIGraphicsGetImageFromCurrentImageContext()
+    // UIGraphicsEndImageContext()
+    */
+}
+
 // Preview function
 
 struct RecipeDetailView_Previews: PreviewProvider {
@@ -416,6 +536,13 @@ struct RecipeDetailView_Previews: PreviewProvider {
         )
     }
 
+    static var sampleRecipeWithImage: Recipe {
+        var recipe = sampleRecipe
+        // Placeholder image URL for preview
+        recipe.imageURL = URL(string: "https://plus.unsplash.com/premium_photo-1700089483464-4f76cc3d360b?q=80&w=2487&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+        return recipe
+    }
+
     // Favorite CTA
     private func toggleFavorite(_ recipe: Recipe) {
         // Flip the favorite flag. (This is a placeholder; adapt as needed.)
@@ -444,7 +571,7 @@ struct RecipeDetailView_Previews: PreviewProvider {
     
     static var previews: some View {
         NavigationView {
-            RecipeDetailView(recipe: sampleRecipe)
+            RecipeDetailView(recipe: sampleRecipeWithImage)
         }
     }
 }

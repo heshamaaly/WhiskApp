@@ -8,10 +8,8 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import Combine
 
-enum Route: Hashable {
-    case recipe(id: String)
-}
 
 struct HomeView: View {
     //FocusState Variable
@@ -48,6 +46,54 @@ struct HomeView: View {
     //Keyboard Responder
     @ObservedObject private var keyboardResponder = KeyboardResponder()
     
+    
+    // MARK: - Unsplash Image Fetching
+
+    /// Decodable model for Unsplash search response
+    private struct UnsplashSearchResult: Codable {
+        struct Photo: Codable {
+            struct Urls: Codable { let regular: String }
+            let urls: Urls
+        }
+        let results: [Photo]
+    }
+    
+    //Set up the unsplash API key
+    private func unsplashKey() -> String {
+        guard
+            let file = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+            let plist = NSDictionary(contentsOfFile: file),
+            let key  = plist["Unsplash_Access_Key"] as? String
+        else {
+            fatalError("Unsplash key missing!")
+        }
+        return key
+    }
+
+    /// Fetches a free image URL from Unsplash based on the recipe title.
+    private func fetchImageURL(for title: String, completion: @escaping (URL?) -> Void) {
+        let accessKey = unsplashKey()
+        let encoded = title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://api.unsplash.com/search/photos?query=\(encoded)&per_page=1&client_id=\(accessKey)"
+        print("Unsplash API URL ->", urlString) //print the string for troubleshooting
+        guard let url = URL(string: urlString) else { completion(nil); return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data = data,
+                  let result = try? JSONDecoder().decode(UnsplashSearchResult.self, from: data),
+                  let first = result.results.first,
+                  let imageURL = URL(string: first.urls.regular)
+            else {
+                completion(nil); return
+            }
+            completion(imageURL)
+        }.resume()
+    }
+
+    enum Route: Hashable {
+        case recipe(id: String)
+    }
+    
+  // Mark: Recipe Generation
     private var openAIAPIKey: String {
         guard let filePath = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
               let plist = NSDictionary(contentsOfFile: filePath),
@@ -330,9 +376,8 @@ struct HomeView: View {
                             if let multiRecipeResult = try JSONSerialization.jsonObject(with: responseData) as? [String: Any],
                                let recipesArray = multiRecipeResult["recipes"] as? [[String: Any]], !recipesArray.isEmpty {
                                 
-                                var parsedRecipes: [Recipe] = []
-                                
-                                // Enumerate over recipes so we can use the index if needed.
+                                // --- After parsing and creating `recipe` object ---
+                                // For each recipe, fetch image URL before appending and saving
                                 for (index, recipeDict) in recipesArray.enumerated() {
                                     // Extract mandatory fields.
                                     guard let title = recipeDict["title"] as? String,
@@ -415,7 +460,7 @@ struct HomeView: View {
                                     }
                                     
                                     // Create the Recipe object with the extracted ordering.
-                                    let recipe = Recipe(
+                                    var recipe = Recipe(
                                         recipeId: nil,
                                         title: title,
                                         text: description,
@@ -432,17 +477,16 @@ struct HomeView: View {
                                         timestamp: nil,
                                         isFavorite: false
                                     )
-                                    parsedRecipes.append(recipe)
-                                }
-                                
-                                DispatchQueue.main.async {
-                                    self.multiRecipes = parsedRecipes
-                                    self.selectedRecipeIndex = 0
-                                    self.isRecipeGenerated = true
-                                    
-                                    // Save each recipe to Firestore.
-                                    for recipe in parsedRecipes {
-                                        self.saveRecipeToFirestore(recipe: recipe)
+                                    // Fetch Unsplash image and append recipe
+                                    fetchImageURL(for: recipe.title) { url in
+                                        var updatedRecipe = recipe
+                                        updatedRecipe.imageURL = url
+                                        DispatchQueue.main.async {
+                                            self.multiRecipes.append(updatedRecipe)
+                                            self.selectedRecipeIndex = 0
+                                            self.isRecipeGenerated = true
+                                            self.saveRecipeToFirestore(recipe: updatedRecipe)
+                                        }
                                     }
                                 }
                             }
@@ -499,7 +543,7 @@ struct HomeView: View {
                                         tipsOrder = ["All"]
                                     }
                                     
-                                    let singleRecipe = Recipe(
+                                    var singleRecipe = Recipe(
                                         recipeId: nil,
                                         title: title,
                                         text: description,
@@ -515,13 +559,18 @@ struct HomeView: View {
                                         timestamp: nil,
                                         isFavorite: false
                                     )
-                                    DispatchQueue.main.async {
-                                        self.recipeTitle = title
-                                        self.recipeDescription = description
-                                        self.multiRecipes = [singleRecipe]
-                                        self.selectedRecipeIndex = 0
-                                        self.isRecipeGenerated = true
-                                        self.saveRecipeToFirestore(recipe: singleRecipe)
+                                    // Fetch Unsplash image before saving and displaying
+                                    fetchImageURL(for: singleRecipe.title) { url in
+                                        var updatedRecipe = singleRecipe
+                                        updatedRecipe.imageURL = url
+                                        DispatchQueue.main.async {
+                                            self.recipeTitle = title
+                                            self.recipeDescription = description
+                                            self.multiRecipes = [updatedRecipe]
+                                            self.selectedRecipeIndex = 0
+                                            self.isRecipeGenerated = true
+                                            self.saveRecipeToFirestore(recipe: updatedRecipe)
+                                        }
                                     }
                                 } else {
                                     DispatchQueue.main.async {
